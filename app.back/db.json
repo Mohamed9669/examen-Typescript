@@ -2,11 +2,13 @@
   "articles": [
     {
       "id": 1,
-      "nom": "Stylo"
+      "nom": "Stylo",
+      "prix": 100
     },
     {
       "id": 2,
-      "nom": "Cahier"
+      "nom": "Cahier",
+      "prix": 200
     }
   ],
   "fournisseurs": [
@@ -37,18 +39,14 @@
       ]
     },
     {
-      "id": "b141",
+      "id": "a502",
       "reference": "APPRO-002",
-      "fournisseurId": 2,
+      "fournisseurId": 1,
       "date": "2025-07-20",
       "lignes": [
         {
-          "articleId": 2,
-          "quantite": 2
-        },
-        {
           "articleId": 1,
-          "quantite": 3
+          "quantite": 1
         }
       ]
     }

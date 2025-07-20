@@ -38,7 +38,7 @@ export function render() {
   let lignes: LigneApprovisionnement[] = [];
   let refCourante = '';
 
-  // Générer la référence automatiquement
+  
   getApprovisionnements().then(appros => {
     let maxNum = 0;
     appros.forEach(a => {
@@ -53,7 +53,7 @@ export function render() {
     if (refInput) refInput.value = refCourante;
   });
 
-  // Chargement fournisseurs et articles
+ 
   getFournisseurs().then(data => {
     fournisseurs = data;
     const select = document.getElementById('fournisseur') as HTMLSelectElement;
@@ -61,32 +61,39 @@ export function render() {
   });
   getArticles().then(data => {
     articles = data;
-    addLigne(); // Ajoute une première ligne par défaut
+    addLigne(); 
   });
+
+  function getPrixArticle(articleId: number): number {
+    return articles.find(a => a.id === articleId)?.prix ?? 0;
+  }
 
   function addLigne() {
     const lignesDiv = document.getElementById('lignes-articles');
     if (!lignesDiv) return;
     const idx = lignes.length;
-    lignes.push({ articleId: articles[0]?.id || 0, quantite: 1 });
+    const articleId = articles[0]?.id || 0;
+    lignes.push({ articleId, quantite: 1 });
     const ligneId = `ligne-${idx}`;
     const selectOptions = articles.map(a => `<option value="${a.id}">${a.nom}</option>`).join('');
+    const prix = getPrixArticle(articleId);
     const html = `
-      <div class="flex gap-2 mb-2" id="${ligneId}">
+      <div class="flex gap-2 mb-2 items-center" id="${ligneId}">
         <select class="article-select border p-1" data-idx="${idx}">${selectOptions}</select>
         <input type="number" min="1" value="1" class="quantite-input border p-1 w-20" data-idx="${idx}" />
+        <span class="prix-article text-sm text-gray-700" data-idx="${idx}">${prix.toFixed(2)} fcfa</span>
         <button type="button" class="remove-ligne bg-red-500 text-white px-2 rounded" data-idx="${idx}">X</button>
       </div>
     `;
     lignesDiv.insertAdjacentHTML('beforeend', html);
   }
 
-  // Ajouter une ligne d'article
+  
   document.getElementById('add-ligne')?.addEventListener('click', () => {
     addLigne();
   });
 
-  // Suppression d'une ligne
+  
   document.getElementById('lignes-articles')?.addEventListener('click', (e) => {
     const target = e.target as HTMLElement;
     if (target.classList.contains('remove-ligne')) {
@@ -96,18 +103,19 @@ export function render() {
     }
   });
 
-  // Mise à jour des valeurs
   document.getElementById('lignes-articles')?.addEventListener('change', (e) => {
     const target = e.target as HTMLInputElement | HTMLSelectElement;
     const idx = Number(target.getAttribute('data-idx'));
     if (target.classList.contains('article-select')) {
       lignes[idx].articleId = Number(target.value);
+
+      const prixSpan = document.querySelector(`.prix-article[data-idx='${idx}']`) as HTMLSpanElement;
+      if (prixSpan) prixSpan.textContent = getPrixArticle(Number(target.value)).toFixed(2) + ' fcfa';
     } else if (target.classList.contains('quantite-input')) {
       lignes[idx].quantite = Number(target.value);
     }
   });
 
-  // Soumission du formulaire
   document.getElementById('form-appro')?.addEventListener('submit', async (e) => {
     e.preventDefault();
     const ref = (document.getElementById('ref') as HTMLInputElement).value;

@@ -37,18 +37,6 @@
           "quantite": 5
         }
       ]
-    },
-    {
-      "id": "a502",
-      "reference": "APPRO-002",
-      "fournisseurId": 1,
-      "date": "2025-07-20",
-      "lignes": [
-        {
-          "articleId": 1,
-          "quantite": 1
-        }
-      ]
     }
   ]
 }

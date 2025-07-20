@@ -1,4 +1,4 @@
-import { getApprovisionnements } from '../service/ApprovisionnementService';
+import { getApprovisionnements, deleteApprovisionnement } from '../service/ApprovisionnementService';
 import { getFournisseurs } from '../service/FournisseurService';
 import { getArticles } from '../service/ArticleService';
 import { render as renderNewAppro } from './NewAppro';
@@ -8,6 +8,51 @@ import type { Article } from '../model/Article';
 
 function formatMontant(montant: number): string {
   return montant.toLocaleString('fr-FR', { minimumFractionDigits: 0 }) + ' FCFA';
+}
+
+function showToast(message: string, color = 'bg-green-600') {
+  let toast = document.createElement('div');
+  toast.className = `fixed top-6 right-6 ${color} text-white px-6 py-3 rounded shadow-lg z-50 animate-fade-in`;
+  toast.textContent = message;
+  document.body.appendChild(toast);
+  setTimeout(() => {
+    toast.classList.add('opacity-0');
+    setTimeout(() => toast.remove(), 500);
+  }, 2000);
+}
+
+function showDetailModal(app: Approvisionnement, fournisseur: string, articles: Article[]) {
+  const montantTotal = app.lignes.reduce((sum, l) => {
+    const art = articles.find(a => a.id === l.articleId);
+    return sum + (art ? art.prix * l.quantite : 0);
+  }, 0);
+  const articlesStr = app.lignes.map(l => {
+    const art = articles.find(a => a.id === l.articleId);
+    if (!art) return '';
+    return `<li>${art.nom} (x${l.quantite}) - ${art.prix.toFixed(2)} FCFA</li>`;
+  }).join('');
+  const modal = document.createElement('div');
+  modal.className = 'fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50';
+  modal.innerHTML = `
+    <div class="bg-white rounded-lg shadow-lg p-6 min-w-[320px] max-w-[90vw] relative animate-fade-in">
+      <button class="absolute top-2 right-2 text-gray-500 hover:text-red-600 text-2xl font-bold close-modal">&times;</button>
+      <h2 class="text-xl font-bold mb-4">Détail de l'approvisionnement</h2>
+      <div class="mb-2"><b>Référence :</b> ${app.reference}</div>
+      <div class="mb-2"><b>Date :</b> ${app.date}</div>
+      <div class="mb-2"><b>Fournisseur :</b> ${fournisseur}</div>
+      <div class="mb-2"><b>Articles :</b>
+        <ul class="list-disc ml-6">${articlesStr}</ul>
+      </div>
+      <div class="mb-2"><b>Montant total :</b> <span class="font-semibold">${formatMontant(montantTotal)}</span></div>
+    </div>
+    <style>
+      .animate-fade-in { animation: fade-in 0.3s; }
+      @keyframes fade-in { from { opacity: 0; transform: translateY(-10px);} to { opacity: 1; transform: none; } }
+    </style>
+  `;
+  document.body.appendChild(modal);
+  modal.querySelector('.close-modal')?.addEventListener('click', () => modal.remove());
+  modal.addEventListener('click', (e) => { if (e.target === modal) modal.remove(); });
 }
 
 export function render() {
@@ -38,11 +83,19 @@ export function render() {
             <th class="px-4 py-3 font-semibold">Fournisseur</th>
             <th class="px-4 py-3 font-semibold">Articles</th>
             <th class="px-4 py-3 font-semibold text-right">Montant total</th>
+            <th class="px-4 py-3 font-semibold text-center">Actions</th>
           </tr>
         </thead>
         <tbody id="table-appros"></tbody>
       </table>
     </div>
+    <style>
+      .action-btn { display: inline-flex; align-items: center; justify-content: center; width: 2.2rem; height: 2.2rem; border-radius: 0.375rem; margin-right: 0.2rem; }
+      .action-view { background: #2563eb; color: #fff; }
+      .action-edit { background: #facc15; color: #000; }
+      .action-delete { background: #ef4444; color: #fff; }
+      .action-btn svg { width: 1.1rem; height: 1.1rem; }
+    </style>
   `;
 
   let approvisionnements: Approvisionnement[] = [];
@@ -74,17 +127,21 @@ export function render() {
         const art = articles.find(a => a.id === l.articleId);
         return sum + (art ? art.prix * l.quantite : 0);
       }, 0);
-      return `<tr class="border-b hover:bg-gray-50 transition">
+      return `<tr class="border-b hover:bg-gray-50 transition" data-id="${app.id}">
         <td class="px-4 py-2">${app.reference}</td>
         <td class="px-4 py-2">${app.date}</td>
         <td class="px-4 py-2">${fournisseur}</td>
         <td class="px-4 py-2">${articlesStr}</td>
-        <td class="px-4 py-2 text-right font-semibold">${formatMontant(montantTotal)} fcfa</td>
+        <td class="px-4 py-2 text-right font-semibold">${formatMontant(montantTotal)}</td>
+        <td class="px-4 py-2 text-center">
+          <button class="action-btn action-view" title="Détail" data-id="${app.id}"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg></button>
+          <button class="action-btn action-edit" title="Modifier"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536M9 13l6.586-6.586a2 2 0 112.828 2.828L11.828 15.828a4 4 0 01-1.414.828l-4 1a1 1 0 01-1.263-1.263l1-4a4 4 0 01.828-1.414z"/></svg></button>
+          <button class="action-btn action-delete" title="Supprimer" data-id="${app.id}"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3m5 0H6"/></svg></button>
+        </td>
       </tr>`;
     }).join('');
   }
 
-  // J'ai filtrer par référence
   document.getElementById('filtre-ref')?.addEventListener('input', (e) => {
     const value = (e.target as HTMLInputElement).value.toLowerCase();
     const filtered = approvisionnements.filter(a => a.reference.toLowerCase().includes(value));
@@ -94,5 +151,45 @@ export function render() {
   document.getElementById('btn-nouveau')?.addEventListener('click', (e) => {
     e.preventDefault();
     renderNewAppro();
+  });
+
+  
+  document.getElementById('table-appros')?.addEventListener('click', async (e) => {
+    const target = e.target as HTMLElement;
+    if (target.closest('.action-delete')) {
+      const btn = target.closest('.action-delete') as HTMLElement;
+      const id = btn.getAttribute('data-id');
+      if (!id) return;
+      
+      try {
+        await deleteApprovisionnement(id); 
+        approvisionnements = approvisionnements.filter(a => String(a.id) !== String(id));
+        afficherTable(approvisionnements);
+        showToast('Suppression réussie !', 'bg-red-600');
+      } catch {
+        showToast('Erreur lors de la suppression', 'bg-red-600');
+      }
+    }
+
+    if (target.closest('.action-view')) {
+      const btn = target.closest('.action-view') as HTMLElement;
+      const id = btn.getAttribute('data-id');
+      if (!id) return;
+      const app = approvisionnements.find(a => a.id === Number(id));
+      if (!app) return;
+      const fournisseur = fournisseurs.find(f => f.id === app.fournisseurId)?.nom || '';
+      showDetailModal(app, fournisseur, articles);
+    }
+        if (target.closest('.action-edit')) {
+      const btn = target.closest('tr');
+      if (!btn) return;
+      const id = btn.getAttribute('data-id');
+      if (!id) return;
+      const app = approvisionnements.find(a => String(a.id) === String(id));
+      if (!app) return;
+      import('./NewAppro').then(module => {
+        module.render(app);
+      });
+    }
   });
 } 

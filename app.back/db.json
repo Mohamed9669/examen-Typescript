@@ -1,0 +1,56 @@
+{
+  "articles": [
+    {
+      "id": 1,
+      "nom": "Stylo"
+    },
+    {
+      "id": 2,
+      "nom": "Cahier"
+    }
+  ],
+  "fournisseurs": [
+    {
+      "id": 1,
+      "nom": "Fournisseur A"
+    },
+    {
+      "id": 2,
+      "nom": "Fournisseur B"
+    }
+  ],
+  "approvisionnements": [
+    {
+      "id": 1,
+      "date": "2024-07-20",
+      "reference": "APPRO-001",
+      "fournisseurId": 1,
+      "lignes": [
+        {
+          "articleId": 1,
+          "quantite": 10
+        },
+        {
+          "articleId": 2,
+          "quantite": 5
+        }
+      ]
+    },
+    {
+      "id": "b141",
+      "reference": "APPRO-002",
+      "fournisseurId": 2,
+      "date": "2025-07-20",
+      "lignes": [
+        {
+          "articleId": 2,
+          "quantite": 2
+        },
+        {
+          "articleId": 1,
+          "quantite": 3
+        }
+      ]
+    }
+  ]
+}

@@ -1,40 +1,36 @@
 {
   "articles": [
     {
-      "id": 1,
+      "id": "1",
       "nom": "Stylo",
       "prix": 100
     },
     {
-      "id": 2,
+      "id": "2",
       "nom": "Cahier",
       "prix": 200
     }
   ],
   "fournisseurs": [
     {
-      "id": 1,
+      "id": "1",
       "nom": "Fournisseur A"
     },
     {
-      "id": 2,
+      "id": "2",
       "nom": "Fournisseur B"
     }
   ],
   "approvisionnements": [
     {
-      "id": 1,
-      "date": "2024-07-20",
-      "reference": "APPRO-001",
-      "fournisseurId": 1,
+      "id": "c395",
+      "reference": "APPRO-002",
+      "fournisseurId": 2,
+      "date": "2025-07-20",
       "lignes": [
         {
-          "articleId": 1,
-          "quantite": 10
-        },
-        {
-          "articleId": 2,
-          "quantite": 5
+          "articleId": "1",
+          "quantite": 1
         }
       ]
     }

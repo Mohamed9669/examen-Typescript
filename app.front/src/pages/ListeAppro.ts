@@ -116,8 +116,12 @@ export function render() {
   function afficherTable(data: Approvisionnement[]) {
     const tbody = document.getElementById('table-appros');
     if (!tbody) return;
+    if (fournisseurs.length === 0 || articles.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="6" class="text-center text-red-500">Aucun fournisseur ou article chargé !</td></tr>';
+      return;
+    }
     tbody.innerHTML = data.map(app => {
-      const fournisseur = fournisseurs.find(f => f.id === app.fournisseurId)?.nom || '';
+      const fournisseur = fournisseurs.find(f => String(f.id) === String(app.fournisseurId))?.nom || '';
       const articlesStr = app.lignes.map(l => {
         const art = articles.find(a => a.id === l.articleId);
         if (!art) return '';
@@ -156,6 +160,7 @@ export function render() {
   
   document.getElementById('table-appros')?.addEventListener('click', async (e) => {
     const target = e.target as HTMLElement;
+    console.log('Clic détecté sur le tableau', target);
     if (target.closest('.action-delete')) {
       const btn = target.closest('.action-delete') as HTMLElement;
       const id = btn.getAttribute('data-id');
@@ -172,13 +177,18 @@ export function render() {
     }
 
     if (target.closest('.action-view')) {
+      console.log('Clic sur bouton détail');
       const btn = target.closest('.action-view') as HTMLElement;
       const id = btn.getAttribute('data-id');
+      console.log('ID trouvé pour détail :', id);
       if (!id) return;
-      const app = approvisionnements.find(a => a.id === Number(id));
+      const app = approvisionnements.find(a => String(a.id) === String(id));
+      console.log('Approvisionnement trouvé :', app);
       if (!app) return;
-      const fournisseur = fournisseurs.find(f => f.id === app.fournisseurId)?.nom || '';
+      const fournisseur = fournisseurs.find(f => String(f.id) === String(app.fournisseurId))?.nom || '';
+      console.log('Fournisseur trouvé :', fournisseur);
       showDetailModal(app, fournisseur, articles);
+      console.log('Modal devrait être affiché');
     }
         if (target.closest('.action-edit')) {
       const btn = target.closest('tr');

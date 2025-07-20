@@ -6,4 +6,4 @@ export interface Approvisionnement {
   reference: string;
   fournisseurId: number;
   lignes: LigneApprovisionnement[];
-} 
+}

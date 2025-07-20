@@ -5,6 +5,17 @@ import type { Article } from '../model/Article';
 import type { Fournisseur } from '../model/Fournisseur';
 import type { LigneApprovisionnement } from '../model/LigneApprovisionnement';
 
+function showToast(message: string) {
+  let toast = document.createElement('div');
+  toast.className = 'fixed top-6 right-6 bg-green-600 text-white px-6 py-3 rounded shadow-lg z-50 animate-fade-in';
+  toast.textContent = message;
+  document.body.appendChild(toast);
+  setTimeout(() => {
+    toast.classList.add('opacity-0');
+    setTimeout(() => toast.remove(), 500);
+  }, 2000);
+}
+
 function genererReference(dernierNumero: number): string {
   const num = (dernierNumero + 1).toString().padStart(3, '0');
   return `APPRO-${num}`;
@@ -31,6 +42,10 @@ export function render() {
       </div>
       <button type="submit" class="bg-green-600 text-white px-4 py-2 rounded">Enregistrer</button>
     </form>
+    <style>
+      @keyframes fade-in { from { opacity: 0; transform: translateY(-10px);} to { opacity: 1; transform: none; } }
+      .animate-fade-in { animation: fade-in 0.3s; transition: opacity 0.5s; }
+    </style>
   `;
 
   let articles: Article[] = [];
@@ -38,7 +53,6 @@ export function render() {
   let lignes: LigneApprovisionnement[] = [];
   let refCourante = '';
 
-  
   getApprovisionnements().then(appros => {
     let maxNum = 0;
     appros.forEach(a => {
@@ -53,7 +67,6 @@ export function render() {
     if (refInput) refInput.value = refCourante;
   });
 
- 
   getFournisseurs().then(data => {
     fournisseurs = data;
     const select = document.getElementById('fournisseur') as HTMLSelectElement;
@@ -81,7 +94,7 @@ export function render() {
       <div class="flex gap-2 mb-2 items-center" id="${ligneId}">
         <select class="article-select border p-1" data-idx="${idx}">${selectOptions}</select>
         <input type="number" min="1" value="1" class="quantite-input border p-1 w-20" data-idx="${idx}" />
-        <span class="prix-article text-sm text-gray-700" data-idx="${idx}">${prix.toFixed(2)} fcfa</span>
+        <span class="prix-article text-sm text-gray-700" data-idx="${idx}">${prix.toFixed(2)} €</span>
         <button type="button" class="remove-ligne bg-red-500 text-white px-2 rounded" data-idx="${idx}">X</button>
       </div>
     `;
@@ -103,19 +116,21 @@ export function render() {
     }
   });
 
+  
   document.getElementById('lignes-articles')?.addEventListener('change', (e) => {
     const target = e.target as HTMLInputElement | HTMLSelectElement;
     const idx = Number(target.getAttribute('data-idx'));
     if (target.classList.contains('article-select')) {
       lignes[idx].articleId = Number(target.value);
-
+      
       const prixSpan = document.querySelector(`.prix-article[data-idx='${idx}']`) as HTMLSpanElement;
-      if (prixSpan) prixSpan.textContent = getPrixArticle(Number(target.value)).toFixed(2) + ' fcfa';
+      if (prixSpan) prixSpan.textContent = getPrixArticle(Number(target.value)).toFixed(2) + ' €';
     } else if (target.classList.contains('quantite-input')) {
       lignes[idx].quantite = Number(target.value);
     }
   });
 
+  
   document.getElementById('form-appro')?.addEventListener('submit', async (e) => {
     e.preventDefault();
     const ref = (document.getElementById('ref') as HTMLInputElement).value;
@@ -123,11 +138,11 @@ export function render() {
     const date = new Date().toISOString().slice(0, 10);
     const lignesValides = lignes.filter(l => l.articleId && l.quantite > 0);
     if (!ref || !fournisseurId || lignesValides.length === 0) {
-      alert('Veuillez remplir tous les champs et ajouter au moins un article.');
+      showToast('Veuillez remplir tous les champs et ajouter au moins un article.');
       return;
     }
     await addApprovisionnement({ reference: ref, fournisseurId, date, lignes: lignesValides });
-    alert('Approvisionnement enregistré !');
+    showToast('Approvisionnement enregistré !');
     render();
   });
 } 
